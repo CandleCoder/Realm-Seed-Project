@@ -1,4 +1,4 @@
-package com.manikant.realmproject;
+package com.CandleCoder.realmproject;
 
 import org.junit.Test;
 
