@@ -5,6 +5,8 @@ import android.app.Fragment;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +25,7 @@ import io.realm.exceptions.RealmPrimaryKeyConstraintException;
  * Created by manikant.upadhyay on 2/23/2016.
  */
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-public class DetailsFragment extends Fragment implements View.OnClickListener {
+public class DetailsFragment extends Fragment implements View.OnClickListener{
 
     private EditText userName;
     private EditText userAge;
@@ -31,8 +33,8 @@ public class DetailsFragment extends Fragment implements View.OnClickListener {
     /*private Spinner Sex;
     private Button Save;
     private Button ShowDetails;*/
-    //private Button saveButton;
-    //private Button showDetailsButton;
+    private Button saveButton;
+    private Button showDetailsButton;
     Realm myRealm;
 
     @Nullable
@@ -53,11 +55,16 @@ public class DetailsFragment extends Fragment implements View.OnClickListener {
         userName = (EditText) view.findViewById(R.id.Name);
         userAge = (EditText) view.findViewById(R.id.Age);
         userEmail = (EditText) view.findViewById(R.id.email);
+
+        userName.addTextChangedListener(textWatcher);
+        userAge.addTextChangedListener(textWatcher);
+        userEmail.addTextChangedListener(textWatcher);
       //  Sex = (Spinner) getActivity().findViewById(R.id.sexSelection);
-        Button saveButton = (Button) view.findViewById(R.id.saveButton);
+        saveButton = (Button) view.findViewById(R.id.saveButton);
+        saveButton.setEnabled(false);
         saveButton.setOnClickListener(this);
 
-        Button showDetailsButton = (Button) view.findViewById(R.id.showDetailsButton);
+        showDetailsButton = (Button) view.findViewById(R.id.showDetailsButton);
         showDetailsButton.setOnClickListener(this);
 
         //onShowDetailsButtonClick();
@@ -67,6 +74,24 @@ public class DetailsFragment extends Fragment implements View.OnClickListener {
 
         return view;
     }
+
+    //TextWatcher
+    private TextWatcher textWatcher = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3)
+        {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+            checkFieldsForEmptyValues();
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+        }
+    };
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -95,63 +120,108 @@ public class DetailsFragment extends Fragment implements View.OnClickListener {
 
 
     private void onShowDetailsButtonClick(){
-        RealmResults<StudentData> results1 =
+        RealmResults<StudentData> data =
                 myRealm.where(StudentData.class).findAll();
+      if(data != null) {
+          for (StudentData c : data) {
+              Log.d("Name", c.getName());
+              Log.d("Email", c.getEmail());
+              Log.d("Age", String.valueOf(c.getAge()));
 
-        for(StudentData c:results1) {
-            Log.d("Name", c.getName());
-            Log.d("Email",c.getEmail());
-            Log.d("Age", String.valueOf(c.getAge()));
-            if(c==null){
-               System.out.println("No record found");
-                Toast.makeText(getActivity(), "No record found",
-                        Toast.LENGTH_SHORT).show();
-            }
 
-            Toast.makeText(getActivity(), "List has been shown in Console :)",
-                    Toast.LENGTH_SHORT).show();
-        }
+              Toast.makeText(getActivity(), "Details has been shown in Console",
+                      Toast.LENGTH_SHORT).show();
+          }
+      }
+          else{
+           Log.d("No records","@@");
+              Toast.makeText(getActivity(), "No records found",
+                      Toast.LENGTH_SHORT).show();
+          }
     }
 
     private void onSaveButtonClick(){
         System.out.println(" saveButton clicked ");
-        myRealm.beginTransaction();
-        try {
-            // Create an object
-            StudentData studentData = myRealm.createObject(StudentData.class);
 
-            // Set its fields
+            try {
+                myRealm.beginTransaction();
+                StudentData studentData = myRealm.createObject(StudentData.class);
 
-            String uname = userName.getText().toString();
-            String email = userEmail.getText().toString();
-            System.out.println(" >>>> email " + email);
+                // Set its fields
 
-            studentData.setName(uname);
-            studentData.setEmail(email);
-            studentData.setAge(Integer.parseInt(userAge.getText().toString()));
-            Toast.makeText(getActivity(), "Data has been saved",
-                    Toast.LENGTH_SHORT).show();
-        }  catch (RealmPrimaryKeyConstraintException e){
-            Toast.makeText(getActivity(), "Entered Email Id already exists.Try again!",
-                    Toast.LENGTH_SHORT).show();
-            userName.setText("");
-            userEmail.setText("");
-            userAge.setText("");
-            System.out.println(" Duplicate entry "+e.getLocalizedMessage());
+                String uname = userName.getText().toString();
+                String email = userEmail.getText().toString();
 
-        }
+                studentData.setName(uname);
+                studentData.setEmail(email);
+                studentData.setAge(Integer.parseInt(userAge.getText().toString()));
+                saveButton.setEnabled(true);
+                Toast.makeText(getActivity(), "Data has been saved",
+                        Toast.LENGTH_SHORT).show();
+            } catch (RealmPrimaryKeyConstraintException e) {
+                Toast.makeText(getActivity(), "Entered Email Id already exists.Try again!",
+                        Toast.LENGTH_SHORT).show();
+                System.out.println(" Duplicate entry " + e.getLocalizedMessage());
+            }
+
         userName.setText("");
         userEmail.setText("");
         userAge.setText("");
+        Toast.makeText(getActivity(), "Enter the data in all fields",
+                Toast.LENGTH_SHORT).show();
         myRealm.commitTransaction();
-    }
+}
+
+
 
     private void deleteAllEntries(){
 
         myRealm.beginTransaction();
         myRealm.clear(StudentData.class);
+        myRealm.commitTransaction();
         Toast.makeText(getActivity(), "All records Deleted",
                 Toast.LENGTH_SHORT).show();
-        myRealm.commitTransaction();
+    }
+
+    private  void checkFieldsForEmptyValues(){
+        String userName = this.userName.getText().toString();
+        String userAge = this.userAge.getText().toString();
+        String userEmail = this.userEmail.getText().toString();
+
+        if(userName.equals("") && userAge.equals("") && userEmail.equals(""))
+        {
+            saveButton.setEnabled(false);
+        }
+
+        else if(!userName.equals("")&& userAge.equals("")&& userEmail.equals("")){
+            saveButton.setEnabled(false);
+        }
+
+        else if(!userAge.equals("")&& userName.equals("")&& userEmail.equals(""))
+        {
+            saveButton.setEnabled(false);
+        }
+
+        else if (!userEmail.equals("")&& userName.equals("")&&userAge.equals(""))
+        {
+            saveButton.setEnabled(false);
+        }
+
+        else if (!userAge.equals("") && !userEmail.equals("") && userName.equals("")){
+            saveButton.setEnabled(false);
+        }
+
+        else if (!userAge.equals("") && !userName.equals("") && userEmail.equals("")){
+            saveButton.setEnabled(false);
+        }
+
+        else if (!userName.equals("") && !userEmail.equals("") && userAge.equals("")){
+            saveButton.setEnabled(false);
+        }
+
+        else
+        {
+            saveButton.setEnabled(true);
+        }
     }
 }

@@ -7,8 +7,10 @@ import io.realm.annotations.PrimaryKey;
  * Created by manikant.upadhyay on 2/23/2016.
  */
 public class StudentData extends RealmObject {
+
 private String Name;
 /*private String Sex;*/
+
 private int Age;
     @PrimaryKey
     private String Email;
